@@ -1,8 +1,14 @@
 use aiken/collection/dict
 use aiken/collection/list
-use cardano/address.{Script}
-use cardano/assets.{AssetName, PolicyId, quantity_of}
-use cardano/transaction.{Input, Output, OutputReference, Transaction}
+use cardano/address.{Address, Script}
+use cardano/assets.{
+  AssetName, PolicyId, from_asset, from_asset_list, quantity_of,
+}
+use cardano/transaction.{
+  Input, NoDatum, Output, OutputReference, Transaction, placeholder,
+}
+use mocktail/virgin_key_hash.{mock_policy_id}
+use mocktail/virgin_output_reference.{mock_utxo_ref}
 
 pub type Action {
   Mint
@@ -14,6 +20,7 @@ validator fract_nft(
   nft_asset_name: AssetName,
   mint_tokens_quantity: Int,
   burn_tokens_quantity: Int,
+  uxto_onetime: OutputReference,
 ) {
   mint(redeemer: Action, policy_id: PolicyId, self: Transaction) {
     let Transaction { inputs, outputs, mint, .. } = self
@@ -21,7 +28,12 @@ validator fract_nft(
     let assets = mint |> assets.tokens(policy_id) |> dict.to_pairs()
 
     when redeemer is {
-      Mint ->
+      Mint -> {
+        expect Some(_input) =
+          list.find(
+            inputs,
+            fn(input) { input.output_reference == uxto_onetime },
+          )
         validate_mint(
           assets,
           inputs,
@@ -31,7 +43,16 @@ validator fract_nft(
           nft_asset_name,
           mint_tokens_quantity,
         )
-      Burn -> validate_burn(assets, policy_id, inputs, burn_tokens_quantity)
+      }
+      Burn ->
+        validate_burn(
+          assets,
+          policy_id,
+          inputs,
+          nft_policy_id,
+          nft_asset_name,
+          burn_tokens_quantity,
+        )
     }
   }
 
@@ -99,6 +120,8 @@ fn validate_burn(
   assets: Pairs<ByteArray, Int>,
   policy_id: PolicyId,
   inputs: List<Input>,
+  nft_policy_id: PolicyId,
+  nft_asset_name: AssetName,
   burn_tokens_quantity: Int,
 ) {
   let is_burn_tokens_valid =
@@ -117,4 +140,192 @@ fn validate_burn(
         )
 
   is_burn_tokens_valid? && is_input_valid?
+}
+
+// Tests
+
+test test_mint() {
+  let the_nft_policy_id = mock_policy_id(0)
+  let the_nft_asset_name = "my_nft"
+  let the_nft = from_asset(the_nft_policy_id, the_nft_asset_name, 1)
+
+  let tx_input =
+    Input {
+      output_reference: mock_utxo_ref(0, 0),
+      output: Output {
+        address: Address {
+          // input from some place
+          payment_credential: Script(mock_policy_id(5)),
+          stake_credential: None,
+        },
+        value: the_nft,
+        datum: NoDatum,
+        reference_script: None,
+      },
+    }
+
+  let tx_output =
+    Output {
+      address: Address {
+        // Output going into the validator
+        payment_credential: Script(mock_policy_id(1)),
+        stake_credential: None,
+      },
+      value: the_nft,
+      datum: NoDatum,
+      reference_script: None,
+    }
+
+  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", 100)])])
+
+  let tx =
+    Transaction {
+      ..placeholder,
+      mint: mint,
+      inputs: [tx_input],
+      outputs: [tx_output],
+    }
+
+  fract_nft.mint(
+    the_nft_policy_id,
+    the_nft_asset_name,
+    100,
+    50,
+    mock_utxo_ref(0, 0),
+    Mint,
+    mock_policy_id(1),
+    tx,
+  )
+}
+
+test test_burn() {
+  let the_nft_policy_id = mock_policy_id(0)
+  let the_nft_asset_name = "my_nft"
+  let the_nft = from_asset(the_nft_policy_id, the_nft_asset_name, 1)
+  let validator_hash = mock_policy_id(1)
+
+  let tx_input =
+    Input {
+      // output reference changed
+      output_reference: mock_utxo_ref(0, 1),
+      output: Output {
+        address: Address {
+          // input from validator
+          payment_credential: Script(validator_hash),
+          stake_credential: None,
+        },
+        value: the_nft,
+        datum: NoDatum,
+        reference_script: None,
+      },
+    }
+
+  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", -50)])])
+
+  let tx = Transaction { ..placeholder, mint: mint, inputs: [tx_input] }
+
+  fract_nft.mint(
+    the_nft_policy_id,
+    the_nft_asset_name,
+    100,
+    50,
+    mock_utxo_ref(0, 0),
+    Burn,
+    validator_hash,
+    tx,
+  )
+}
+
+test test_spend() {
+  let the_nft_policy_id = mock_policy_id(0)
+  let the_nft_asset_name = "my_nft"
+  let the_nft = from_asset(the_nft_policy_id, the_nft_asset_name, 1)
+  let validator_hash = mock_policy_id(1)
+
+  let own_oref = mock_utxo_ref(0, 1)
+
+  let tx_input =
+    Input {
+      // output reference changed
+      output_reference: own_oref,
+      output: Output {
+        address: Address {
+          // input from validator
+          payment_credential: Script(validator_hash),
+          stake_credential: None,
+        },
+        value: the_nft,
+        datum: NoDatum,
+        reference_script: None,
+      },
+    }
+
+  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", -50)])])
+
+  let tx = Transaction { ..placeholder, mint: mint, inputs: [tx_input] }
+
+  fract_nft.spend(
+    the_nft_policy_id,
+    the_nft_asset_name,
+    100,
+    50,
+    mock_utxo_ref(0, 0),
+    None,
+    "",
+    own_oref,
+    tx,
+  )
+}
+
+test test_mint_with_spend() {
+  let the_nft_policy_id = mock_policy_id(0)
+  let the_nft_asset_name = "my_nft"
+  let the_nft = from_asset(the_nft_policy_id, the_nft_asset_name, 1)
+  let validator_hash = mock_policy_id(1)
+
+  let own_oref = mock_utxo_ref(0, 1)
+
+  let tx_input =
+    Input {
+      // output reference changed
+      output_reference: own_oref,
+      output: Output {
+        address: Address {
+          // input from validator
+          payment_credential: Script(validator_hash),
+          stake_credential: None,
+        },
+        value: the_nft,
+        datum: NoDatum,
+        reference_script: None,
+      },
+    }
+
+  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", -50)])])
+
+  let tx = Transaction { ..placeholder, mint: mint, inputs: [tx_input] }
+
+  and {
+    fract_nft.mint(
+      the_nft_policy_id,
+      the_nft_asset_name,
+      100,
+      50,
+      mock_utxo_ref(0, 0),
+      Burn,
+      validator_hash,
+      tx,
+    ),
+    fract_nft.spend(
+      the_nft_policy_id,
+      the_nft_asset_name,
+      100,
+      50,
+      mock_utxo_ref(0, 0),
+      None,
+      "",
+      own_oref,
+      tx,
+    ),
+  }
 }
