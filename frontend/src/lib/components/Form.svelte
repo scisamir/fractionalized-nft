@@ -44,8 +44,9 @@
       class="btn variant-filled-primary"
       on:click={() => mint(policy, tokenName)}>Mint</button
     >
-    <button class="btn hover:variant-outline-success" on:click={() => burn()}
-      >Unlock</button
+    <button
+      class="btn hover:variant-outline-success"
+      on:click={() => burn(policy, tokenName)}>Unlock</button
     >
   </div>
 </form>

@@ -36,6 +36,7 @@ export async function mint(policy: string, tokenName: string) {
   });
 
   console.log("nftToLock:", lockAssetUtxo);
+
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
 
@@ -43,7 +44,7 @@ export async function mint(policy: string, tokenName: string) {
 
   const paramUtxo = outputReference(
     lockAssetUtxo.input.txHash,
-    lockAssetUtxo.outputIndex,
+    lockAssetUtxo.input.outputIndex,
   );
   console.log("utxo");
   console.log(paramUtxo);
