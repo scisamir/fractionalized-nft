@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { burn } from "$lib/burn";
   import { mint } from "$lib/mint";
   import { focusTrap } from "@skeletonlabs/skeleton";
   let isFocused: boolean = true;
@@ -41,7 +42,7 @@
     <button class="btn variant-filled-primary" on:click={() => mint()}
       >Mint</button
     >
-    <button class="btn hover:variant-outline-success" disabled={false}
+    <button class="btn hover:variant-outline-success" on:click={() => burn()}
       >Unlock</button
     >
   </div>
