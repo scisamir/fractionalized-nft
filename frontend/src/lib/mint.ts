@@ -1,43 +1,109 @@
 import { mConStr0, stringToHex } from "@meshsdk/core";
 import {
   blockchainProvider,
-  fractPolicyId,
-  parameterizedScript,
-  scriptAddr,
   txBuilder,
   wallet1,
   wallet1Address,
   wallet1Collateral,
   wallet1Utxos,
 } from "./setup.ts";
+import blueprint from "./plutus.json" with { type: "json" };
+import { builtinByteString, integer, outputReference } from "@meshsdk/common";
+import type { UTxO } from "@meshsdk/common";
 
-export async function mint() {
-  const tokenName = "fract-" + fractPolicyId.substring(0, 5);
-  console.log("tokeName:", tokenName);
+import {
+  applyParamsToScript,
+  BlockfrostProvider,
+  MeshTxBuilder,
+  MeshWallet,
+  resolveScriptHash,
+  serializePlutusScript,
+} from "@meshsdk/core";
+
+export async function mint(policy: string, tokenName: string) {
   const tokenNameHex = stringToHex(tokenName);
 
-  const nftToLockArray = await blockchainProvider.fetchUTxOs(
-    "38874f1ad945dea28f95a00f169168625364c9ecfb072f5729efbfab2ec95768",
-    0,
+  const utxos = await wallet1.getUtxos();
+  console.log(utxos);
+  let lockAssetUtxo: UTxO;
+
+  utxos.forEach((e: UTxO) => {
+    e.output.amount.forEach((asset: any) => {
+      if (asset.unit == policy + tokenNameHex) {
+        lockAssetUtxo = e;
+      }
+    });
+  });
+
+  console.log("nftToLock:", lockAssetUtxo);
+  console.log("token:", tokenName);
+  console.log("tokenHex:", tokenNameHex);
+
+  console.log("wallet addy:", wallet1Address);
+
+  const paramUtxo = outputReference(
+    lockAssetUtxo.input.txHash,
+    lockAssetUtxo.outputIndex,
   );
-  const nftToLock = nftToLockArray[0];
-  console.log("nftToLock:", nftToLock);
-  console.log("amount:", nftToLock.output.amount);
-  const nftToLockUnit =
-    "b2af4d6208ee4114c74dc01b7111ba1df61a94a2d7d2fd7c473b139f6d795f6e6674";
+  console.log("utxo");
+  console.log(paramUtxo);
+
+  if (!paramUtxo) {
+    throw new Error("paramUtxo not found!");
+  }
+
+  // Fract NFT Validator
+  const fractNftValidator = blueprint.validators.filter((val) =>
+    val.title.includes("fract_nft.mint")
+  );
+  if (!fractNftValidator) {
+    throw new Error("Fract NFT Validator not found!");
+  }
+
+  if (
+    lockAssetUtxo == undefined || lockAssetUtxo == null ||
+    lockAssetUtxo.input == null ||
+    lockAssetUtxo.output == null
+  ) {
+    throw new Error("nftToLock not found!");
+  }
+
+  const parameterizedScript = applyParamsToScript(
+    fractNftValidator[0].compiledCode,
+    [
+      builtinByteString(
+        policy,
+      ),
+      builtinByteString(tokenNameHex),
+      integer(100),
+      integer(50),
+      paramUtxo,
+    ],
+    "JSON",
+  );
+
+  const scriptAddr = serializePlutusScript(
+    { code: parameterizedScript, version: "V3" },
+    undefined,
+    0,
+  ).address;
+  console.log("script address:", scriptAddr, "\n");
+
+  const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
+  console.log("fractPolicyId:", fractPolicyId);
 
   const unsignedTx = await txBuilder
     .txIn(
-      nftToLock.input.txHash,
-      nftToLock.input.outputIndex,
-      nftToLock.output.amount,
-      nftToLock.output.address,
+      lockAssetUtxo.input.txHash,
+      lockAssetUtxo.input.outputIndex,
+      lockAssetUtxo.output.amount,
+      lockAssetUtxo.output.address,
     )
     .mintPlutusScriptV3()
     .mint("100", fractPolicyId, tokenNameHex)
     .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr0([]))
-    .txOut(scriptAddr, [{ unit: nftToLockUnit, quantity: "1" }])
+    .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
     .changeAddress(wallet1Address)
     .selectUtxosFrom(wallet1Utxos)
     .txInCollateral(

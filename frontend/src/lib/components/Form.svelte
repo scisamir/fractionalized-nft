@@ -2,9 +2,10 @@
   import { burn } from "$lib/burn";
   import { mint } from "$lib/mint";
   import { focusTrap } from "@skeletonlabs/skeleton";
+  import { tokenToString } from "typescript";
   let isFocused: boolean = true;
   let policy: string = "";
-  let asset: string = "";
+  let tokenName: string = "";
   let amountN: number = 1;
   let amountM: number = 1;
 </script>
@@ -20,9 +21,9 @@
   <input
     class="input input-group p-2 m-2"
     type="text"
-    name="Asset"
-    bind:value={asset}
-    placeholder="Asset"
+    name="Token Name"
+    bind:value={tokenName}
+    placeholder="Token Name"
   />
   <input
     class="input input-group p-2 m-2"
@@ -39,8 +40,9 @@
     placeholder="M Amount"
   />
   <div class="text-center">
-    <button class="btn variant-filled-primary" on:click={() => mint()}
-      >Mint</button
+    <button
+      class="btn variant-filled-primary"
+      on:click={() => mint(policy, tokenName)}>Mint</button
     >
     <button class="btn hover:variant-outline-success" on:click={() => burn()}
       >Unlock</button
