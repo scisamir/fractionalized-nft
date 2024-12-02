@@ -8,3 +8,5 @@ docs/
 # JS/TS Files
 dist
 node_modules
+
+.env
