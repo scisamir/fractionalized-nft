@@ -1,5 +1,7 @@
 use aiken/collection/dict
 use aiken/collection/list
+use aiken/primitive/bytearray.{to_string}
+use aiken/primitive/string.{from_bytearray}
 use cardano/address.{Address, Script}
 use cardano/assets.{
   AssetName, PolicyId, from_asset, from_asset_list, quantity_of,
@@ -26,6 +28,12 @@ validator fract_nft(
     let Transaction { inputs, outputs, mint, .. } = self
 
     let assets = mint |> assets.tokens(policy_id) |> dict.to_pairs()
+
+    expect [Pair(fract_asset_name, _)] = assets
+    let valid_fract_asset_name =
+      string.concat(left: @"fract-", right: from_bytearray(nft_asset_name))
+
+    expect valid_fract_asset_name == to_string(fract_asset_name)
 
     when redeemer is {
       Mint -> {
@@ -176,7 +184,8 @@ test test_mint() {
       reference_script: None,
     }
 
-  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", 100)])])
+  let mint =
+    from_asset_list([Pair(mock_policy_id(1), [Pair("fract-my_nft", 100)])])
 
   let tx =
     Transaction {
@@ -220,7 +229,7 @@ test test_burn() {
       },
     }
 
-  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", -50)])])
+  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract-my_nft", -50)])])
 
   let tx = Transaction { ..placeholder, mint: mint, inputs: [tx_input] }
 
@@ -301,7 +310,7 @@ test test_mint_with_spend() {
       },
     }
 
-  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract1", -50)])])
+  let mint = from_asset_list([Pair(mock_policy_id(1), [Pair("fract-my_nft", -50)])])
 
   let tx = Transaction { ..placeholder, mint: mint, inputs: [tx_input] }
 
