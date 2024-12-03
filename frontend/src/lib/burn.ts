@@ -1,12 +1,5 @@
 import { mConStr1, stringToHex } from "@meshsdk/core";
-import {
-  blockchainProvider,
-  txBuilder,
-  wallet1,
-  wallet1Address,
-  wallet1Collateral,
-  wallet1Utxos,
-} from "./setup.ts";
+import { blockchainProvider, initWallet, txBuilder } from "./setup.ts";
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
 import type { UTxO } from "@meshsdk/common";
@@ -19,11 +12,34 @@ import {
   resolveScriptHash,
   serializePlutusScript,
 } from "@meshsdk/core";
+import { BrowserWalletState } from "./state/browser-wallet-state.svelte.ts";
 
 export async function burn(policy: string, tokenName: string) {
   const tokenNameHex = stringToHex(tokenName);
+  console.log(BrowserWalletState.wallet.getChangeAddress());
+  console.log(BrowserWalletState.wallet);
 
-  const utxos = await wallet1.getUtxos();
+  const wallet1 = new MeshWallet({
+    networkId: 0,
+    fetcher: blockchainProvider,
+    submitter: blockchainProvider,
+    key: {
+      type: "address",
+      words: BrowserWalletState.wallet.getChangeAddress(),
+    },
+  });
+
+  await initWallet(wallet1);
+  const wallet1Collateral: UTxO = await BrowserWalletState.wallet
+    .getCollateral();
+
+  console.log(wallet1Collateral);
+
+  if (!wallet1Collateral) {
+    throw new Error("No collateral utxo found");
+  }
+
+  const utxos = await BrowserWalletState.wallet.getUtxos();
   console.log(utxos);
   let lockAssetUtxo: UTxO;
 
@@ -34,6 +50,17 @@ export async function burn(policy: string, tokenName: string) {
       }
     });
   });
+
+  const wallet1Address = await BrowserWalletState.wallet.getChangeAddress();
+
+  console.log("nftToLock:", lockAssetUtxo);
+
+  console.log("token:", tokenName);
+  console.log("tokenHex:", tokenNameHex);
+
+  console.log("wallet addy:", wallet1Address);
+
+  console.log(utxos);
 
   console.log("nftToLock:", lockAssetUtxo);
 

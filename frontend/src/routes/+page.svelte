@@ -1,8 +1,6 @@
 <script>
   import Form from "$lib/components/Form.svelte";
-  import { MeshWallet } from "@meshsdk/core";
-  import { BlockfrostProvider } from "@meshsdk/core";
-  import { Transaction } from "@meshsdk/core";
+  import WalletConnect from "$lib/components/WalletConnect.svelte";
 </script>
 
 <div class="">
@@ -11,4 +9,8 @@
   </h1>
   <!-- <button on:click={() => loadWalletBuildTx()}>Load Wallet Build Tx</button> -->
   <Form></Form>
+
+  <div class="m-auto">
+    <WalletConnect />
+  </div>
 </div>

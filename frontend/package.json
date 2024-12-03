@@ -27,6 +27,7 @@
 		"vite-plugin-wasm": "^3.3.0"
 	},
 	"dependencies": {
-		"@meshsdk/core": "^1.7.22"
+		"@meshsdk/core": "^1.7.22",
+		"@meshsdk/svelte": "^1.7.25"
 	}
 }

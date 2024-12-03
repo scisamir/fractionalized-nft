@@ -1,6 +1,7 @@
 <script lang="ts">
   import { burn } from "$lib/burn";
   import { mint } from "$lib/mint";
+  import { BrowserWalletState } from "$lib/state/browser-wallet-state.svelte";
   import { focusTrap } from "@skeletonlabs/skeleton";
   import { tokenToString } from "typescript";
   let isFocused: boolean = true;
@@ -42,10 +43,12 @@
   <div class="text-center">
     <button
       class="btn variant-filled-primary"
+      disabled={BrowserWalletState.wallet == undefined}
       on:click={() => mint(policy, tokenName)}>Mint</button
     >
     <button
       class="btn hover:variant-outline-success"
+      disabled={BrowserWalletState.wallet == undefined}
       on:click={() => burn(policy, tokenName)}>Unlock</button
     >
   </div>

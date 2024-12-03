@@ -8,6 +8,7 @@ import {
 } from "@meshsdk/core";
 import type { UTxO } from "@meshsdk/common";
 import { env } from "$env/dynamic/public";
+import { BrowserWalletState } from "./state/browser-wallet-state.svelte.ts";
 
 // import dotenv from "dotenv";
 // dotenv.config();
@@ -24,24 +25,7 @@ const wallet1Passphrase = env.PUBLIC_WALLET_PASSPHRASE;
 if (!wallet1Passphrase) {
   throw new Error("WALLET_PASSPHRASE does not exist");
 }
-const wallet1 = new MeshWallet({
-  networkId: 0,
-  fetcher: blockchainProvider,
-  submitter: blockchainProvider,
-  key: {
-    type: "mnemonic",
-    words: wallet1Passphrase.split(" "),
-  },
-});
-
-const wallet1Address = await wallet1.getChangeAddress();
-console.log("addy: " + wallet1Address);
-
-const wallet1Utxos = await wallet1.getUtxos();
-const wallet1Collateral: UTxO = (await wallet1.getCollateral())[0];
-if (!wallet1Collateral) {
-  throw new Error("No collateral utxo found");
-}
+let wallet1: MeshWallet;
 
 // Create transaction builder
 const txBuilder = new MeshTxBuilder({
@@ -51,11 +35,26 @@ const txBuilder = new MeshTxBuilder({
 });
 txBuilder.setNetwork("preprod");
 
+async function getUtxos() {
+  return await wallet1.getUtxos();
+}
+async function getCollateral() {
+  return (await wallet1.getCollateral())[0];
+}
+
+async function initWallet(wallet: MeshWallet) {
+  wallet1 = wallet;
+}
+
+async function getAddress() {
+  return await wallet1.getChangeAddress();
+}
+
 export {
   blockchainProvider,
+  getAddress,
+  getCollateral,
+  getUtxos,
+  initWallet,
   txBuilder,
-  wallet1,
-  wallet1Address,
-  wallet1Collateral,
-  wallet1Utxos,
 };

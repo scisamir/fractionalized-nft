@@ -1,11 +1,11 @@
 import { mConStr0, stringToHex } from "@meshsdk/core";
 import {
   blockchainProvider,
+  getAddress,
+  getCollateral,
+  getUtxos,
+  initWallet,
   txBuilder,
-  wallet1,
-  wallet1Address,
-  wallet1Collateral,
-  wallet1Utxos,
 } from "./setup.ts";
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
@@ -19,12 +19,27 @@ import {
   resolveScriptHash,
   serializePlutusScript,
 } from "@meshsdk/core";
+import { BrowserWalletState } from "./state/browser-wallet-state.svelte.ts";
 
 export async function mint(policy: string, tokenName: string) {
   const tokenNameHex = stringToHex(tokenName);
+  if (BrowserWalletState.wallet == undefined) {
+    return;
+  }
 
-  const utxos = await wallet1.getUtxos();
-  console.log(utxos);
+  const wallet1 = new MeshWallet({
+    networkId: 0,
+    fetcher: blockchainProvider,
+    submitter: blockchainProvider,
+    key: {
+      type: "address",
+      address: await BrowserWalletState.wallet.getChangeAddress(),
+    },
+  });
+
+  await initWallet(wallet1);
+
+  const utxos = await getUtxos();
   let lockAssetUtxo: UTxO;
 
   utxos.forEach((e: UTxO) => {
@@ -36,11 +51,9 @@ export async function mint(policy: string, tokenName: string) {
   });
 
   console.log("nftToLock:", lockAssetUtxo);
-
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
-
-  console.log("wallet addy:", wallet1Address);
+  console.log("wallet addy:", await getAddress());
 
   const paramUtxo = outputReference(
     lockAssetUtxo.input.txHash,
@@ -93,6 +106,14 @@ export async function mint(policy: string, tokenName: string) {
   const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
   console.log("fractPolicyId:", fractPolicyId);
 
+  const wallet1Collateral = await getCollateral();
+  const wallet1Addy = await getAddress();
+  const wallet1UTXO = await getUtxos();
+
+  console.log(wallet1Collateral);
+  console.log(wallet1Addy);
+  console.log(wallet1UTXO);
+
   const unsignedTx = await txBuilder
     .txIn(
       lockAssetUtxo.input.txHash,
@@ -105,8 +126,8 @@ export async function mint(policy: string, tokenName: string) {
     .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr0([]))
     .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
-    .changeAddress(wallet1Address)
-    .selectUtxosFrom(wallet1Utxos)
+    .changeAddress(wallet1Addy)
+    .selectUtxosFrom(wallet1UTXO)
     .txInCollateral(
       wallet1Collateral.input.txHash,
       wallet1Collateral.input.outputIndex,
