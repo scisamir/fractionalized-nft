@@ -31,7 +31,7 @@ let wallet1: MeshWallet;
 const txBuilder = new MeshTxBuilder({
   fetcher: blockchainProvider,
   submitter: blockchainProvider,
-  verbose: false,
+  verbose: true,
 });
 txBuilder.setNetwork("preprod");
 
@@ -42,7 +42,7 @@ async function getCollateral() {
   return (await wallet1.getCollateral())[0];
 }
 
-async function initWallet(wallet: MeshWallet) {
+function initWallet(wallet: MeshWallet) {
   wallet1 = wallet;
 }
 

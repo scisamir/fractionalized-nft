@@ -136,8 +136,8 @@ export async function mint(policy: string, tokenName: string) {
     )
     .complete();
 
-  const signedTx = await wallet1.signTx(unsignedTx);
-  const txHash = await wallet1.submitTx(signedTx);
+  const signedTx = await BrowserWalletState.wallet.signTx(unsignedTx);
+  const txHash = await BrowserWalletState.wallet.submitTx(signedTx);
 
   console.log("my fract minted tx hash:", txHash);
 }
