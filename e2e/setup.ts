@@ -41,7 +41,7 @@ if (!wallet1Collateral) {
     throw new Error('No collateral utxo found');
 }
 
-const paramUtxo = outputReference("38874f1ad945dea28f95a00f169168625364c9ecfb072f5729efbfab2ec95768", 0);
+const paramUtxo = outputReference("f591e09681e51a20c97f260f83735edecb1b20be624fe6ef5747a56d314601a7", 0);
 
 // Fract NFT Validator
 const fractNftValidator = blueprint.validators.filter((val) => val.title.includes('fract_nft.mint'));
@@ -53,9 +53,9 @@ const parameterizedScript = applyParamsToScript(
     fractNftValidator[0].compiledCode,
     [
         builtinByteString("b2af4d6208ee4114c74dc01b7111ba1df61a94a2d7d2fd7c473b139f"),
-        builtinByteString("6d795f6e6674"),
-        integer(100),
-        integer(50),
+        builtinByteString("6f6e657369655f736369"),
+        integer(120),
+        integer(60),
         paramUtxo
     ],
     "JSON"
@@ -67,8 +67,6 @@ const scriptAddr = serializePlutusScript(
     0
 ).address;
 console.log('script address:', scriptAddr, '\n');
-// script address: addr_test1wrhx7ceyv0jxnpfk9cq0zd6hajzy6gwd7qwurep0t4qytzcf4kyy4
-// script address: addr_test1wrhx7ceyv0jxnpfk9cq0zd6hajzy6gwd7qwurep0t4qytzcf4kyy4
 
 const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
 console.log('fractPolicyId:', fractPolicyId);

@@ -15,7 +15,7 @@ const validatorScript = applyParamsToScript(
 
 const policyId = resolveScriptHash(validatorScript, "V3");
 
-const tokenName = 'my_nft';
+const tokenName = 'onesie_sci';
 const tokenNameHex = stringToHex(tokenName);
 
 const unsignedTx = await txBuilder
