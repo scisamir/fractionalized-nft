@@ -27,19 +27,7 @@ export async function mint(policy: string, tokenName: string) {
     return;
   }
 
-  const wallet1 = new MeshWallet({
-    networkId: 0,
-    fetcher: blockchainProvider,
-    submitter: blockchainProvider,
-    key: {
-      type: "address",
-      address: await BrowserWalletState.wallet.getChangeAddress(),
-    },
-  });
-
-  await initWallet(wallet1);
-
-  const utxos = await getUtxos();
+  const utxos = await BrowserWalletState.wallet.getUtxos();
   let lockAssetUtxo: UTxO;
 
   utxos.forEach((e: UTxO) => {
@@ -53,7 +41,6 @@ export async function mint(policy: string, tokenName: string) {
   console.log("nftToLock:", lockAssetUtxo);
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
-  console.log("wallet addy:", await getAddress());
 
   const paramUtxo = outputReference(
     lockAssetUtxo.input.txHash,
@@ -106,13 +93,11 @@ export async function mint(policy: string, tokenName: string) {
   const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
   console.log("fractPolicyId:", fractPolicyId);
 
-  const wallet1Collateral = await getCollateral();
-  const wallet1Addy = await getAddress();
-  const wallet1UTXO = await getUtxos();
+  const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
+  const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
 
-  console.log(wallet1Collateral);
+  console.log(wallet1Collateral[0]);
   console.log(wallet1Addy);
-  console.log(wallet1UTXO);
 
   const unsignedTx = await txBuilder
     .txIn(
@@ -122,17 +107,17 @@ export async function mint(policy: string, tokenName: string) {
       lockAssetUtxo.output.address,
     )
     .mintPlutusScriptV3()
-    .mint("100", fractPolicyId, tokenNameHex)
+    .mint("100", fractPolicyId, stringToHex("fract-" + tokenName))
     .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr0([]))
     .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
     .changeAddress(wallet1Addy)
-    .selectUtxosFrom(wallet1UTXO)
+    .selectUtxosFrom(utxos)
     .txInCollateral(
-      wallet1Collateral.input.txHash,
-      wallet1Collateral.input.outputIndex,
-      wallet1Collateral.output.amount,
-      wallet1Collateral.output.address,
+      wallet1Collateral[0].input.txHash,
+      wallet1Collateral[0].input.outputIndex,
+      wallet1Collateral[0].output.amount,
+      wallet1Collateral[0].output.address,
     )
     .complete();
 
@@ -140,4 +125,40 @@ export async function mint(policy: string, tokenName: string) {
   const txHash = await BrowserWalletState.wallet.submitTx(signedTx);
 
   console.log("my fract minted tx hash:", txHash);
+}
+
+export async function TESTmint() {
+  const validatorScript = applyParamsToScript(
+    "59013b010100323232323232322533300232323232325332330083001300937540042646464a66601660080022a66601c601a6ea80180085854ccc02ccdc3a40040022a66601c601a6ea80180085858c02cdd500289919299980718088010992999806180298069baa0071337109000000899b8800148000dd698068008b180780099299980519b8748008c02cdd50008a5eb7bdb1804dd5980798061baa00132330010013756601e602060206020602060186ea8018894ccc038004530103d87a8000132333222533300f3372200e0062a66601e66e3c01c00c4cdd2a4000660266e980092f5c02980103d87a8000133006006001375c601a0026eacc038004c048008c040004dd7180698051baa002370e90000b1805980600198050011804801180480098021baa00114984d9595cd2ab9d5573caae7d5d02ba157441",
+    [],
+  );
+
+  const policyId = resolveScriptHash(validatorScript, "V3");
+
+  const tokenName2 = "test_";
+  const tokenNameHex = stringToHex(tokenName2);
+  const utxos = await BrowserWalletState.wallet.getUtxos();
+
+  const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
+  const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
+
+  const unsignedTx = await txBuilder
+    .mintPlutusScriptV3()
+    .mint("1", policyId, tokenNameHex)
+    .mintingScript(validatorScript)
+    .mintRedeemerValue(mConStr0([]))
+    .changeAddress(wallet1Addy)
+    .selectUtxosFrom(utxos)
+    .txInCollateral(
+      wallet1Collateral[0].input.txHash,
+      wallet1Collateral[0].input.outputIndex,
+      wallet1Collateral[0].output.amount,
+      wallet1Collateral[0].output.address,
+    )
+    .complete();
+
+  const signedTx = await BrowserWalletState.wallet.signTx(unsignedTx);
+  const txHash = await BrowserWalletState.wallet.submitTx(signedTx);
+
+  console.log("my_nft minted tx hash:", txHash);
 }

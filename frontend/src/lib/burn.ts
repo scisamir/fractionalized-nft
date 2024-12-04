@@ -24,33 +24,23 @@ import { BrowserWalletState } from "./state/browser-wallet-state.svelte.ts";
 export async function burn(policy: string, tokenName: string) {
   const tokenNameHex = stringToHex(tokenName);
 
-  const wallet1 = new MeshWallet({
-    networkId: 0,
-    fetcher: blockchainProvider,
-    submitter: blockchainProvider,
-    key: {
-      type: "address",
-      address: await BrowserWalletState.wallet.getChangeAddress(),
-    },
-  });
-
-  await initWallet(wallet1);
-
   const utxos = await BrowserWalletState.wallet.getUtxos();
-  console.log(utxos);
-  let lockAssetUtxo: UTxO;
+  // let unLockAssetUtxo: UTxO;
 
-  utxos.forEach((e: UTxO) => {
-    e.output.amount.forEach((asset: any) => {
-      if (asset.unit == policy + tokenNameHex) {
-        lockAssetUtxo = e;
-      }
-    });
-  });
+  // let count = 0;
+  // utxos.forEach((e: UTxO) => {
+  //   e.output.amount.forEach((asset: any) => {
+  //     if (asset.unit.includes(policy + tokenNameHex)) {
+  //       unLockAssetUtxo = e;
+  //       console.log(count);
+  //     }
+  //   });
+  //   count++;
+  // });
 
   const wallet1Address = await BrowserWalletState.wallet.getChangeAddress();
 
-  console.log("nftToLock:", lockAssetUtxo);
+  // console.log("nftToUnLock:", unLockAssetUtxo);
 
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
@@ -58,8 +48,6 @@ export async function burn(policy: string, tokenName: string) {
   console.log("wallet addy:", wallet1Address);
 
   console.log(utxos);
-
-  console.log("nftToLock:", lockAssetUtxo);
 
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
@@ -67,15 +55,14 @@ export async function burn(policy: string, tokenName: string) {
   console.log("wallet addy:", wallet1Address);
 
   const paramUtxo = outputReference(
-    lockAssetUtxo.input.txHash,
-    lockAssetUtxo.input.outputIndex,
+    // unLockAssetUtxo.input.txHash,
+    "b3b7b82adc9fcb5d14b193313a4bec8d28d333295f5df91a589c4fc6c1da3d44",
+    // unLockAssetUtxo.input.outputIndex,
+    0,
   );
+
   console.log("utxo");
   console.log(paramUtxo);
-
-  if (!paramUtxo) {
-    throw new Error("paramUtxo not found!");
-  }
 
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>
@@ -85,21 +72,13 @@ export async function burn(policy: string, tokenName: string) {
     throw new Error("Fract NFT Validator not found!");
   }
 
-  if (
-    lockAssetUtxo == undefined || lockAssetUtxo == null ||
-    lockAssetUtxo.input == null ||
-    lockAssetUtxo.output == null
-  ) {
-    throw new Error("nftToLock not found!");
-  }
-
   const parameterizedScript = applyParamsToScript(
     fractNftValidator[0].compiledCode,
     [
       builtinByteString(
-        policy,
+        "b2af4d6208ee4114c74dc01b7111ba1df61a94a2d7d2fd7c473b139f",
       ),
-      builtinByteString(tokenNameHex),
+      builtinByteString("746573745f"),
       integer(100),
       integer(50),
       paramUtxo,
@@ -107,26 +86,36 @@ export async function burn(policy: string, tokenName: string) {
     "JSON",
   );
 
+  console.log(parameterizedScript);
+
   const scriptAddr = serializePlutusScript(
     { code: parameterizedScript, version: "V3" },
     undefined,
     0,
   ).address;
+
   console.log("script address:", scriptAddr, "\n");
+  const unLockAssetUtxo = await blockchainProvider.fetchAddressUTxOs(
+    scriptAddr,
+  );
+  const nftToUnLock = unLockAssetUtxo[0];
+  const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
+  const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
 
   const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
   console.log("fractPolicyId:", fractPolicyId);
-  const wallet1Collateral = await getCollateral();
-  const wallet1Addy = await getAddress();
-  const wallet1Utxos = await getUtxos();
+
+  console.log("policy:");
+  console.log(policy);
+  console.log("Col:", wallet1Collateral[0]);
 
   const unsignedTx = await txBuilder
     .spendingPlutusScriptV3()
     .txIn(
-      lockAssetUtxo.input.txHash,
-      lockAssetUtxo.input.outputIndex,
-      lockAssetUtxo.output.amount,
-      lockAssetUtxo.output.address,
+      nftToUnLock.input.txHash,
+      nftToUnLock.input.outputIndex,
+      nftToUnLock.output.amount,
+      nftToUnLock.output.address,
     )
     .txInScript(parameterizedScript)
     .spendingReferenceTxInInlineDatumPresent()
@@ -135,14 +124,14 @@ export async function burn(policy: string, tokenName: string) {
     .mint("-50", fractPolicyId, tokenNameHex)
     .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr1([]))
-    .txOut(wallet1Address, [])
-    .changeAddress(wallet1Address)
-    .selectUtxosFrom(wallet1Utxos)
+    .txOut(wallet1Addy, [])
+    .changeAddress(wallet1Addy)
+    .selectUtxosFrom(utxos)
     .txInCollateral(
-      wallet1Collateral.input.txHash,
-      wallet1Collateral.input.outputIndex,
-      wallet1Collateral.output.amount,
-      wallet1Collateral.output.address,
+      wallet1Collateral[0].input.txHash,
+      wallet1Collateral[0].input.outputIndex,
+      wallet1Collateral[0].output.amount,
+      wallet1Collateral[0].output.address,
     )
     .complete();
 

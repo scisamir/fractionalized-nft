@@ -1,6 +1,6 @@
 <script lang="ts">
   import { burn } from "$lib/burn";
-  import { mint } from "$lib/mint";
+  import { mint, TESTmint } from "$lib/mint";
   import { BrowserWalletState } from "$lib/state/browser-wallet-state.svelte";
   import { focusTrap } from "@skeletonlabs/skeleton";
   import { tokenToString } from "typescript";
@@ -53,3 +53,9 @@
     >
   </div>
 </form>
+
+<button
+  class="btn hover:variant-outline-success"
+  disabled={BrowserWalletState.wallet == undefined}
+  on:click={() => TESTmint()}>TEST MINT</button
+>
