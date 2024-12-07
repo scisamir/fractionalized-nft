@@ -85,16 +85,6 @@ export async function burn(policy: string, tokenName: string) {
 
   const script = mintData2.data.scripts_executed[0].bytes;
 
-  const paramUtxo = outputReference(
-    // unLockAssetUtxo.input.txHash,
-    "b3b7b82adc9fcb5d14b193313a4bec8d28d333295f5df91a589c4fc6c1da3d44",
-    // unLockAssetUtxo.input.outputIndex,
-    0,
-  );
-
-  console.log("utxo");
-  console.log(paramUtxo);
-
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>
     val.title.includes("fract_nft.mint")
@@ -103,21 +93,6 @@ export async function burn(policy: string, tokenName: string) {
     throw new Error("Fract NFT Validator not found!");
   }
 
-  const parameterizedScript = applyParamsToScript(
-    fractNftValidator[0].compiledCode,
-    [
-      builtinByteString(
-        "b2af4d6208ee4114c74dc01b7111ba1df61a94a2d7d2fd7c473b139f",
-      ),
-      builtinByteString("746573745f"),
-      integer(100),
-      integer(50),
-      paramUtxo,
-    ],
-    "JSON",
-  );
-
-  console.log(parameterizedScript);
   console.log(script);
 
   const scriptAddr = serializePlutusScript(
