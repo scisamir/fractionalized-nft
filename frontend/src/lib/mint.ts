@@ -113,6 +113,7 @@ export async function mint(policy: string, tokenName: string) {
     .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
     .changeAddress(wallet1Addy)
     .selectUtxosFrom(utxos)
+    .txOutReferenceScript(parameterizedScript, "V3")
     .txInCollateral(
       wallet1Collateral[0].input.txHash,
       wallet1Collateral[0].input.outputIndex,
@@ -135,7 +136,7 @@ export async function TESTmint() {
 
   const policyId = resolveScriptHash(validatorScript, "V3");
 
-  const tokenName2 = "test_";
+  const tokenName2 = "test2_";
   const tokenNameHex = stringToHex(tokenName2);
   const utxos = await BrowserWalletState.wallet.getUtxos();
 
@@ -157,7 +158,7 @@ export async function TESTmint() {
     )
     .complete();
 
-  const signedTx = await BrowserWalletState.wallet.signTx(unsignedTx);
+  const signedTx = await BrowserWalletState.wallet.signTx(unsignedTx, true);
   const txHash = await BrowserWalletState.wallet.submitTx(signedTx);
 
   console.log("my_nft minted tx hash:", txHash);

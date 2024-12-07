@@ -53,9 +53,10 @@
     >
   </div>
 </form>
-
-<button
-  class="btn hover:variant-outline-success"
-  disabled={BrowserWalletState.wallet == undefined}
-  on:click={() => TESTmint()}>TEST MINT</button
->
+<div class="m-auto text-center m-4 relative">
+  <button
+    class="btn hover:variant-outline-success"
+    disabled={BrowserWalletState.wallet == undefined}
+    on:click={() => TESTmint()}>TEST MINT</button
+  >
+</div>

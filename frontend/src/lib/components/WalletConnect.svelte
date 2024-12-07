@@ -49,7 +49,7 @@
   aria-label="Connect Wallet"
   onmouseenter={() => (hideMenuList = false)}
   onmouseleave={() => (hideMenuList = true)}
-  class="z-50 w-min text-center m-auto"
+  class="z-50 w-min text-center m-auto  "
 >
   <button
        class="btn variant-filled-primary"
@@ -90,7 +90,7 @@
   </button>
   
   <div
-    class={`mr-menu-list z-50 w-40  justify-center m-auto  rounded-b-md border text-center shadow-sm backdrop-blur ${hideMenuList && "hidden"} ${isDark ? `bg-primary-950  text-neutral-50` : `bg-neutral-50 text-neutral-950`}`}
+    class={`mr-menu-list z-50 w-40 absolute ml-4  justify-center m-auto  rounded-b-md border text-center shadow-sm backdrop-blur ${hideMenuList && "hidden"} ${isDark ? `bg-primary-950  text-neutral-50` : `bg-neutral-50 text-neutral-950`}`}
   >
     {#if BrowserWalletState.wallet === undefined && availableWallets.length > 0}
       {#each availableWallets as enabledWallet}
@@ -109,7 +109,7 @@
 </div>
 {#snippet menuItem(icon: string | undefined, onclick: () => void, name: string)}
   <button
-    class="flex h-16 cursor-pointer items-center px-4 w-full py-2 opacity-80 hover:opacity-100 hover:bg-primary-500"
+    class="flex h-16 cursor-pointer  items-center px-4 w-full py-2 opacity-80 hover:opacity-100 hover:bg-primary-500"
     {onclick}
   >
     {#if icon}

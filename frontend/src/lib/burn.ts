@@ -10,6 +10,13 @@ import {
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
 import type { UTxO } from "@meshsdk/common";
+import { MaestroProvider } from "@meshsdk/core";
+
+const maestroProvider = new MaestroProvider({
+  network: "Preprod", // Mainnet / Preprod / Preview
+  apiKey: "Lw00JGgFdp1YfLjTqLvSZEh1Wluz0IUl", // Get key at https://docs.gomaestro.org/
+  turboSubmit: false, // Read about paid turbo transaction submission feature at https://docs.gomaestro.org
+});
 
 import {
   applyParamsToScript,
@@ -25,22 +32,8 @@ export async function burn(policy: string, tokenName: string) {
   const tokenNameHex = stringToHex(tokenName);
 
   const utxos = await BrowserWalletState.wallet.getUtxos();
-  // let unLockAssetUtxo: UTxO;
-
-  // let count = 0;
-  // utxos.forEach((e: UTxO) => {
-  //   e.output.amount.forEach((asset: any) => {
-  //     if (asset.unit.includes(policy + tokenNameHex)) {
-  //       unLockAssetUtxo = e;
-  //       console.log(count);
-  //     }
-  //   });
-  //   count++;
-  // });
 
   const wallet1Address = await BrowserWalletState.wallet.getChangeAddress();
-
-  // console.log("nftToUnLock:", unLockAssetUtxo);
 
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
@@ -48,11 +41,49 @@ export async function burn(policy: string, tokenName: string) {
   console.log("wallet addy:", wallet1Address);
 
   console.log(utxos);
+  console.log(utxos[0]);
 
   console.log("token:", tokenName);
   console.log("tokenHex:", tokenNameHex);
 
   console.log("wallet addy:", wallet1Address);
+
+  // const r = await maestroProvider.get(
+  //   "assets/" +
+  //     policy + tokenNameHex + "/utxos",
+  // );
+
+  // console.log(await maestroProvider.fetchTxInfo(r.data[0].tx_hash));
+  const hash = await maestroProvider.get(
+    "assets/" +
+      policy + tokenNameHex + "/mints",
+  );
+
+  console.log(hash);
+
+  const mintData = await maestroProvider.get(
+    "transactions/" + hash.data[0].tx_hash,
+    +"/txo",
+  );
+
+  console.log(mintData);
+
+  const asset2 = mintData.data.outputs[0].assets[2];
+  console.log(asset2);
+
+  const hash2 = await maestroProvider.get(
+    "assets/" +
+      asset2.unit + "/mints",
+  );
+
+  console.log(hash);
+
+  const mintData2 = await maestroProvider.get(
+    "transactions/" + hash2.data[0].tx_hash,
+    +"/txo",
+  );
+
+  const script = mintData2.data.scripts_executed[0].bytes;
 
   const paramUtxo = outputReference(
     // unLockAssetUtxo.input.txHash,
@@ -87,9 +118,10 @@ export async function burn(policy: string, tokenName: string) {
   );
 
   console.log(parameterizedScript);
+  console.log(script);
 
   const scriptAddr = serializePlutusScript(
-    { code: parameterizedScript, version: "V3" },
+    { code: script, version: "V3" },
     undefined,
     0,
   ).address;
@@ -102,9 +134,11 @@ export async function burn(policy: string, tokenName: string) {
   const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
   const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
 
-  const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
+  const fractPolicyId = resolveScriptHash(script, "V3");
   console.log("fractPolicyId:", fractPolicyId);
 
+  console.log("nft:");
+  console.log(nftToUnLock);
   console.log("policy:");
   console.log(policy);
   console.log("Col:", wallet1Collateral[0]);
@@ -117,12 +151,12 @@ export async function burn(policy: string, tokenName: string) {
       nftToUnLock.output.amount,
       nftToUnLock.output.address,
     )
-    .txInScript(parameterizedScript)
+    .txInScript(script)
     .spendingReferenceTxInInlineDatumPresent()
     .spendingReferenceTxInRedeemerValue("")
     .mintPlutusScriptV3()
     .mint("-50", fractPolicyId, tokenNameHex)
-    .mintingScript(parameterizedScript)
+    .mintingScript(script)
     .mintRedeemerValue(mConStr1([]))
     .txOut(wallet1Addy, [])
     .changeAddress(wallet1Addy)
@@ -135,7 +169,7 @@ export async function burn(policy: string, tokenName: string) {
     )
     .complete();
 
-  const signedTx = await BrowserWalletState.wallet.signTx(unsignedTx);
+  const signedTx = await BrowserWalletState.wallet.signTx(unsignedTx, true);
   const txHash = await BrowserWalletState.wallet.submitTx(signedTx);
 
   console.log("my fract burned tx hash:", txHash);
