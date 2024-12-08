@@ -5,18 +5,12 @@ import {
   getCollateral,
   getUtxos,
   initWallet,
+  maestroProvider,
   txBuilder,
 } from "./setup.ts";
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
 import type { UTxO } from "@meshsdk/common";
-import { MaestroProvider } from "@meshsdk/core";
-
-const maestroProvider = new MaestroProvider({
-  network: "Preprod", // Mainnet / Preprod / Preview
-  apiKey: "Lw00JGgFdp1YfLjTqLvSZEh1Wluz0IUl", // Get key at https://docs.gomaestro.org/
-  turboSubmit: false, // Read about paid turbo transaction submission feature at https://docs.gomaestro.org
-});
 
 import {
   applyParamsToScript,
@@ -26,6 +20,7 @@ import {
   resolveScriptHash,
   serializePlutusScript,
 } from "@meshsdk/core";
+
 import { BrowserWalletState } from "./state/browser-wallet-state.svelte.ts";
 
 export async function burn(policy: string, tokenName: string) {
@@ -68,22 +63,31 @@ export async function burn(policy: string, tokenName: string) {
 
   console.log(mintData);
 
-  const asset2 = mintData.data.outputs[0].assets[2];
-  console.log(asset2);
+  // const asset2 = mintData.data.outputs[0].assets[2];
+  // console.log(asset2);
 
-  const hash2 = await maestroProvider.get(
-    "assets/" +
-      asset2.unit + "/mints",
-  );
+  // const hash2 = await maestroProvider.get(
+  //   "assets/" +
+  //     asset2.unit + "/mints",
+  // );
 
-  console.log(hash);
+  // console.log(hash);
 
-  const mintData2 = await maestroProvider.get(
-    "transactions/" + hash2.data[0].tx_hash,
-    +"/txo",
-  );
+  // const mintData2 = await maestroProvider.get(
+  //   "transactions/" + hash2.data[0].tx_hash,
+  //   +"/txo",
+  // );
 
-  const script = mintData2.data.scripts_executed[0].bytes;
+  // console.log(mintData2);
+
+  // console.log(
+  //   "//find: " +
+  //     "c84f2755ba3913f381af73761d79432c1d31a1a45ec6b8208ec82b45f9bd7413" +
+  //     "OR: " +
+  //     "5f47ab04b7514c881749671de7185d25baff2aaef8e5f2f7bf28b520",
+  // );
+
+  const script = mintData.data.outputs[0].reference_script.bytes;
 
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>

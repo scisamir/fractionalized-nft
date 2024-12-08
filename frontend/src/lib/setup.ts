@@ -1,6 +1,7 @@
 import {
   applyParamsToScript,
   BlockfrostProvider,
+  MaestroProvider,
   MeshTxBuilder,
   MeshWallet,
   resolveScriptHash,
@@ -33,6 +34,13 @@ const txBuilder = new MeshTxBuilder({
   submitter: blockchainProvider,
   verbose: true,
 });
+
+const maestroProvider = new MaestroProvider({
+  network: "Preprod", // Mainnet / Preprod / Preview
+  apiKey: env.PUBLIC_MAESTRO_ID, // Get key at https://docs.gomaestro.org/
+  turboSubmit: false, // Read about paid turbo transaction submission feature at https://docs.gomaestro.org
+});
+
 txBuilder.setNetwork("preprod");
 
 async function getUtxos() {
@@ -56,5 +64,6 @@ export {
   getCollateral,
   getUtxos,
   initWallet,
+  maestroProvider,
   txBuilder,
 };

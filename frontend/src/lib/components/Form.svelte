@@ -57,6 +57,6 @@
   <button
     class="btn hover:variant-outline-success"
     disabled={BrowserWalletState.wallet == undefined}
-    on:click={() => TESTmint()}>TEST MINT</button
+    on:click={() => TESTmint(tokenName)}>TEST MINT</button
   >
 </div>

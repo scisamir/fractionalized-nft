@@ -83,6 +83,8 @@ export async function mint(policy: string, tokenName: string) {
     "JSON",
   );
 
+  console.log(parameterizedScript);
+
   const scriptAddr = serializePlutusScript(
     { code: parameterizedScript, version: "V3" },
     undefined,
@@ -128,7 +130,7 @@ export async function mint(policy: string, tokenName: string) {
   console.log("my fract minted tx hash:", txHash);
 }
 
-export async function TESTmint() {
+export async function TESTmint(name: string) {
   const validatorScript = applyParamsToScript(
     "59013b010100323232323232322533300232323232325332330083001300937540042646464a66601660080022a66601c601a6ea80180085854ccc02ccdc3a40040022a66601c601a6ea80180085858c02cdd500289919299980718088010992999806180298069baa0071337109000000899b8800148000dd698068008b180780099299980519b8748008c02cdd50008a5eb7bdb1804dd5980798061baa00132330010013756601e602060206020602060186ea8018894ccc038004530103d87a8000132333222533300f3372200e0062a66601e66e3c01c00c4cdd2a4000660266e980092f5c02980103d87a8000133006006001375c601a0026eacc038004c048008c040004dd7180698051baa002370e90000b1805980600198050011804801180480098021baa00114984d9595cd2ab9d5573caae7d5d02ba157441",
     [],
@@ -136,7 +138,7 @@ export async function TESTmint() {
 
   const policyId = resolveScriptHash(validatorScript, "V3");
 
-  const tokenName2 = "test2_";
+  const tokenName2 = name;
   const tokenNameHex = stringToHex(tokenName2);
   const utxos = await BrowserWalletState.wallet.getUtxos();
 
