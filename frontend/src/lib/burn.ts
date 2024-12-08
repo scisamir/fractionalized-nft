@@ -8,6 +8,9 @@ import {
   maestroProvider,
   txBuilder,
 } from "./setup.ts";
+
+import { applyDoubleCborEncoding } from "lucid-cardano";
+
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
 import type { UTxO } from "@meshsdk/common";
@@ -87,7 +90,13 @@ export async function burn(policy: string, tokenName: string) {
   //     "5f47ab04b7514c881749671de7185d25baff2aaef8e5f2f7bf28b520",
   // );
 
-  const script = mintData.data.outputs[0].reference_script.bytes;
+  const script = applyDoubleCborEncoding(
+    mintData.data.outputs[0].reference_script.bytes,
+  );
+
+  const hash_ = applyDoubleCborEncoding(
+    mintData.data.outputs[0].reference_script.hash,
+  );
 
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>
@@ -97,8 +106,6 @@ export async function burn(policy: string, tokenName: string) {
     throw new Error("Fract NFT Validator not found!");
   }
 
-  console.log(script);
-
   const scriptAddr = serializePlutusScript(
     { code: script, version: "V3" },
     undefined,
@@ -106,10 +113,12 @@ export async function burn(policy: string, tokenName: string) {
   ).address;
 
   console.log("script address:", scriptAddr, "\n");
+
   const unLockAssetUtxo = await blockchainProvider.fetchAddressUTxOs(
     scriptAddr,
   );
   const nftToUnLock = unLockAssetUtxo[0];
+
   const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
   const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
 
@@ -130,12 +139,13 @@ export async function burn(policy: string, tokenName: string) {
       nftToUnLock.output.amount,
       nftToUnLock.output.address,
     )
-    .txInScript(script)
+    .mintTxInReference(hash_, 0)
+    // .txInScript(script)
     .spendingReferenceTxInInlineDatumPresent()
     .spendingReferenceTxInRedeemerValue("")
     .mintPlutusScriptV3()
     .mint("-50", fractPolicyId, tokenNameHex)
-    .mintingScript(script)
+    //.mintingScript(script)
     .mintRedeemerValue(mConStr1([]))
     .txOut(wallet1Addy, [])
     .changeAddress(wallet1Addy)
