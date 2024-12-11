@@ -115,7 +115,7 @@ export async function mint(policy: string, tokenName: string) {
     .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
     .changeAddress(wallet1Addy)
     .selectUtxosFrom(utxos)
-    .txOutReferenceScript(parameterizedScript, "V3")
+    //.txOutReferenceScript(parameterizedScript, "V3")
     .txInCollateral(
       wallet1Collateral[0].input.txHash,
       wallet1Collateral[0].input.outputIndex,

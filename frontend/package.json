@@ -28,7 +28,7 @@
 	},
 	"dependencies": {
 		"@meshsdk/core": "^1.7.22",
-		"@meshsdk/svelte": "^1.7.25",
-		"lucid-cardano": "^0.10.11"
+		"@meshsdk/core-csl": "^1.7.31",
+		"@meshsdk/svelte": "^1.7.25"
 	}
 }

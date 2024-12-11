@@ -9,7 +9,7 @@ import {
   txBuilder,
 } from "./setup.ts";
 
-import { applyDoubleCborEncoding } from "lucid-cardano";
+import { applyCborEncoding } from "@meshsdk/core-csl";
 
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
@@ -64,24 +64,19 @@ export async function burn(policy: string, tokenName: string) {
     +"/txo",
   );
 
-  console.log(mintData);
+  const hash2 = await maestroProvider.get(
+    "assets/" +
+      mintData.data.outputs[0].assets[1].unit + "/mints",
+  );
 
-  // const asset2 = mintData.data.outputs[0].assets[2];
-  // console.log(asset2);
+  console.log(hash2);
 
-  // const hash2 = await maestroProvider.get(
-  //   "assets/" +
-  //     asset2.unit + "/mints",
-  // );
+  const mintData2 = await maestroProvider.get(
+    "transactions/" + hash2.data[0].tx_hash,
+    +"/txo",
+  );
 
-  // console.log(hash);
-
-  // const mintData2 = await maestroProvider.get(
-  //   "transactions/" + hash2.data[0].tx_hash,
-  //   +"/txo",
-  // );
-
-  // console.log(mintData2);
+  console.log(mintData2);
 
   // console.log(
   //   "//find: " +
@@ -90,13 +85,7 @@ export async function burn(policy: string, tokenName: string) {
   //     "5f47ab04b7514c881749671de7185d25baff2aaef8e5f2f7bf28b520",
   // );
 
-  const script = applyDoubleCborEncoding(
-    mintData.data.outputs[0].reference_script.bytes,
-  );
-
-  const hash_ = applyDoubleCborEncoding(
-    mintData.data.outputs[0].reference_script.hash,
-  );
+  const script = mintData.data.outputs[0].reference_script.bytes;
 
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>
@@ -119,16 +108,44 @@ export async function burn(policy: string, tokenName: string) {
   );
   const nftToUnLock = unLockAssetUtxo[0];
 
+  console.log("---------------");
+  console.log(mintData2.data.tx_hash);
+
+  const paramUtxo = outputReference(
+    mintData2.data.tx_hash, //nftToUnLock.input.txHash,
+    0,
+  );
+
+  const tokenNameHex2 = stringToHex(tokenName.replace("fract-", ""));
+  const policy2 = nftToUnLock.output.amount[1].unit.replace(tokenNameHex2, "");
+  console.log(tokenNameHex2);
+  console.log(policy2);
+  console.log(paramUtxo);
+
+  const parameterizedScript = applyParamsToScript(
+    fractNftValidator[0].compiledCode,
+    [
+      builtinByteString(
+        policy2,
+      ),
+      builtinByteString(tokenNameHex2),
+      integer(100),
+      integer(50),
+      paramUtxo,
+    ],
+    "JSON",
+  );
+
+  console.log(parameterizedScript);
+
   const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
   const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
 
-  const fractPolicyId = resolveScriptHash(script, "V3");
+  const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
   console.log("fractPolicyId:", fractPolicyId);
 
   console.log("nft:");
   console.log(nftToUnLock);
-  console.log("policy:");
-  console.log(policy);
   console.log("Col:", wallet1Collateral[0]);
 
   const unsignedTx = await txBuilder
@@ -139,13 +156,12 @@ export async function burn(policy: string, tokenName: string) {
       nftToUnLock.output.amount,
       nftToUnLock.output.address,
     )
-    .mintTxInReference(hash_, 0)
-    // .txInScript(script)
+    .txInScript(parameterizedScript)
     .spendingReferenceTxInInlineDatumPresent()
     .spendingReferenceTxInRedeemerValue("")
     .mintPlutusScriptV3()
     .mint("-50", fractPolicyId, tokenNameHex)
-    //.mintingScript(script)
+    .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr1([]))
     .txOut(wallet1Addy, [])
     .changeAddress(wallet1Addy)

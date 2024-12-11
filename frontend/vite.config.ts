@@ -14,10 +14,4 @@ export default defineConfig({
       protocolImports: true,
     }),
   ],
-  optimizeDeps: {
-    esbuildOptions: {
-      target: "es2020",
-    },
-    exclude: ["lucid-cardano"],
-  },
 });
