@@ -1,15 +1,15 @@
 import { mConStr0, stringToHex } from "@meshsdk/core";
-import { blockchainProvider, fractPolicyId, parameterizedScript, scriptAddr, txBuilder, wallet1, wallet1Address, wallet1Collateral, wallet1Utxos } from "./setup.js";
+import { maestroProvider, fractPolicyId, parameterizedScript, refScriptValAddr, scriptAddr, txBuilder, wallet1, wallet1Address, wallet1Collateral, wallet1Utxos } from "./setup.js";
 
-const tokenName = 'fract-' + 'onesie_sci';
+const tokenName = 'fract-' + 'fenix';
 console.log('tokeName:', tokenName);
 const tokenNameHex = stringToHex(tokenName);
 
-const nftToLockArray = await blockchainProvider.fetchUTxOs("f591e09681e51a20c97f260f83735edecb1b20be624fe6ef5747a56d314601a7", 0);
+const nftToLockArray = await maestroProvider.fetchUTxOs("088e36e5999a69521c4bae68b399cf799a111f0824a6fba773e815fb65b331dd", 0);
 const nftToLock = nftToLockArray[0];
 console.log('nftToLock:', nftToLock);
 console.log('amount:', nftToLock.output.amount)
-const nftToLockUnit = "b2af4d6208ee4114c74dc01b7111ba1df61a94a2d7d2fd7c473b139f6f6e657369655f736369"
+const nftToLockUnit = "cad3ae15ed1cfc018198ba091728384178c324d48892be56ac3c2e9666656e6978"
 
 const unsignedTx = await txBuilder
 .txIn(
@@ -23,6 +23,8 @@ const unsignedTx = await txBuilder
 .mintingScript(parameterizedScript)
 .mintRedeemerValue(mConStr0([]))
 .txOut(scriptAddr, [{ unit: nftToLockUnit, quantity: "1" }])
+.txOut(refScriptValAddr, [{ unit: "lovelace", quantity: "7000000" }])
+.txOutReferenceScript(parameterizedScript, "V3")
 .changeAddress(wallet1Address)
 .selectUtxosFrom(wallet1Utxos)
 .txInCollateral(

@@ -12,8 +12,8 @@
   "description": "",
   "dependencies": {
     "@meshsdk/core": "^1.7.19",
+    "@meshsdk/core-csl": "^1.8.0",
     "dotenv": "^16.4.5",
     "typescript": "^5.7.2"
   }
 }
-

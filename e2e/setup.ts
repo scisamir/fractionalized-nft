@@ -1,6 +1,7 @@
 import {
   applyParamsToScript,
   BlockfrostProvider,
+  MaestroProvider,
   MeshTxBuilder,
   MeshWallet,
   resolveScriptHash,
@@ -15,13 +16,25 @@ import {
 import dotenv from "dotenv";
 dotenv.config();
 import blueprint from "../plutus.json" with { type: "json" };
+import refBlueprint from "../test-mint_nft_onchain/plutus.json" with { type: "json" }
 
 // Setup blockhain provider as Blockfrost
-const blockfrostId = process.env.BLOCKFROST_ID;
-if (!blockfrostId) {
-  throw new Error("BLOCKFROST_ID does not exist");
+// const blockfrostId = process.env.BLOCKFROST_ID;
+// if (!blockfrostId) {
+//   throw new Error("BLOCKFROST_ID does not exist");
+// }
+// const blockchainProvider = new BlockfrostProvider(blockfrostId);
+
+// Setup blockhain provider as Maestro
+const maestroKey = process.env.MAESTRO_KEY;
+if (!maestroKey) {
+  throw new Error("MAESTRO_KEY does not exist");
 }
-const blockchainProvider = new BlockfrostProvider(blockfrostId);
+const maestroProvider = new MaestroProvider({
+  network: "Preprod", // Mainnet / Preprod / Preview
+  apiKey: maestroKey, // Get key at https://docs.gomaestro.org/
+  turboSubmit: false, // Read about paid turbo transaction submission feature at https://docs.gomaestro.org
+});
 
 // import wallet passphrase and initialize the wallet
 const wallet1Passphrase = process.env.WALLET_PASSPHRASE;
@@ -30,8 +43,8 @@ if (!wallet1Passphrase) {
 }
 const wallet1 = new MeshWallet({
   networkId: 0,
-  fetcher: blockchainProvider,
-  submitter: blockchainProvider,
+  fetcher: maestroProvider,
+  submitter: maestroProvider,
   key: {
     type: "mnemonic",
     words: wallet1Passphrase.split(" "),
@@ -47,7 +60,7 @@ if (!wallet1Collateral) {
 }
 
 const paramUtxo = outputReference(
-  "f591e09681e51a20c97f260f83735edecb1b20be624fe6ef5747a56d314601a7",
+  "088e36e5999a69521c4bae68b399cf799a111f0824a6fba773e815fb65b331dd",
   0,
 );
 
@@ -63,15 +76,18 @@ const parameterizedScript = applyParamsToScript(
   fractNftValidator[0].compiledCode,
   [
     builtinByteString(
-      "b2af4d6208ee4114c74dc01b7111ba1df61a94a2d7d2fd7c473b139f",
+      "cad3ae15ed1cfc018198ba091728384178c324d48892be56ac3c2e96",
     ),
-    builtinByteString("6f6e657369655f736369"),
+    builtinByteString("66656e6978"),
     integer(120),
     integer(60),
     paramUtxo,
   ],
   "JSON",
 );
+
+// console.log('parameterizedScript:', parameterizedScript);
+// 5904cf5904cc01010033333323232323232...
 
 const scriptAddr = serializePlutusScript(
   { code: parameterizedScript, version: "V3" },
@@ -83,16 +99,34 @@ console.log("script address:", scriptAddr, "\n");
 const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
 console.log("fractPolicyId:", fractPolicyId);
 
+// Ref script validator
+const refScriptValidator = refBlueprint.validators.filter((val) =>
+  val.title.includes("ref_script_val.spend")
+);
+if (!refScriptValidator) {
+  throw new Error("Ref Script Validator not found!");
+}
+const refScriptValCode = applyParamsToScript(
+  refScriptValidator[0].compiledCode,
+  [],
+  "JSON"
+);
+const refScriptValAddr = serializePlutusScript(
+  { code: refScriptValCode, version: "V3" },
+  undefined,
+  0
+).address;
+
+
 // Create transaction builder
 const txBuilder = new MeshTxBuilder({
-  fetcher: blockchainProvider,
-  submitter: blockchainProvider,
+  fetcher: maestroProvider,
+  submitter: maestroProvider,
   verbose: false,
 });
 txBuilder.setNetwork("preprod");
 
 export {
-  blockchainProvider,
   fractPolicyId,
   parameterizedScript,
   scriptAddr,
@@ -101,4 +135,6 @@ export {
   wallet1Address,
   wallet1Collateral,
   wallet1Utxos,
+  refScriptValAddr,
+  maestroProvider,
 };
