@@ -23,7 +23,12 @@ import {
 } from "@meshsdk/core";
 import { BrowserWalletState } from "./state/browser-wallet-state.svelte.ts";
 
-export async function mint(policy: string, tokenName: string) {
+export async function mint(
+  policy: string,
+  tokenName: string,
+  amountM: number,
+  amountN: number,
+) {
   const tokenNameHex = stringToHex(tokenName);
   if (BrowserWalletState.wallet == undefined) {
     return;
@@ -72,8 +77,8 @@ export async function mint(policy: string, tokenName: string) {
         policy,
       ),
       builtinByteString(tokenNameHex),
-      integer(100),
-      integer(50),
+      integer(amountM),
+      integer(amountN),
       paramUtxo,
     ],
     "JSON",
