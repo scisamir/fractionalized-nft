@@ -7,6 +7,8 @@ import {
   initWallet,
   txBuilder,
 } from "./setup.ts";
+
+import refBlueprint from "./ref/plutus.json" with { type: "json" };
 import blueprint from "./plutus.json" with { type: "json" };
 import { builtinByteString, integer, outputReference } from "@meshsdk/common";
 import type { UTxO } from "@meshsdk/common";
@@ -101,6 +103,24 @@ export async function mint(policy: string, tokenName: string) {
   console.log(wallet1Collateral[0]);
   console.log(wallet1Addy);
 
+  // Ref script validator
+  const refScriptValidator = refBlueprint.validators.filter((val) =>
+    val.title.includes("ref_script_val.spend")
+  );
+  if (!refScriptValidator) {
+    throw new Error("Ref Script Validator not found!");
+  }
+  const refScriptValCode = applyParamsToScript(
+    refScriptValidator[0].compiledCode,
+    [],
+    "JSON",
+  );
+  const refScriptValAddr = serializePlutusScript(
+    { code: refScriptValCode, version: "V3" },
+    undefined,
+    0,
+  ).address;
+
   const unsignedTx = await txBuilder
     .txIn(
       lockAssetUtxo.input.txHash,
@@ -113,9 +133,10 @@ export async function mint(policy: string, tokenName: string) {
     .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr0([]))
     .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
+    .txOut(refScriptValAddr, [{ unit: "lovelace", quantity: "7000000" }])
     .changeAddress(wallet1Addy)
     .selectUtxosFrom(utxos)
-    //.txOutReferenceScript(parameterizedScript, "V3")
+    .txOutReferenceScript(parameterizedScript, "V3")
     .txInCollateral(
       wallet1Collateral[0].input.txHash,
       wallet1Collateral[0].input.outputIndex,

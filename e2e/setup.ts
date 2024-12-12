@@ -16,7 +16,7 @@ import {
 import dotenv from "dotenv";
 dotenv.config();
 import blueprint from "../plutus.json" with { type: "json" };
-import refBlueprint from "../test-mint_nft_onchain/plutus.json" with { type: "json" }
+import refBlueprint from "../frontend/src/lib/ref/plutus.json" with { type: "json" }
 
 // Setup blockhain provider as Blockfrost
 // const blockfrostId = process.env.BLOCKFROST_ID;

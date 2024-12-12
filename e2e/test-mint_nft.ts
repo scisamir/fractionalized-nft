@@ -4,7 +4,7 @@ import {
   resolveScriptHash,
   stringToHex,
 } from "@meshsdk/core";
-import mintNftBlueprint from "../test-mint_nft_onchain/plutus.json" with {
+import mintNftBlueprint from "../frontend/src/lib/ref/plutus.json" with {
   type: "json",
 };
 import {
