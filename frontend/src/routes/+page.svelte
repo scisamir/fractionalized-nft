@@ -4,7 +4,7 @@
 </script>
 
 <div class="block">
-  <div class="w-1/2 m-auto mb-8">
+  <div class="m-auto mb-8 max-w-md">
     <img class="" src={logo} alt="" />
   </div>
   <div class="-mt-12">
