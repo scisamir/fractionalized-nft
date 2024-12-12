@@ -52,7 +52,7 @@
   class="z-50 w-min text-center m-auto  "
 >
   <button
-       class="btn variant-filled-primary"
+       class="btn variant-filled-primary btn-sm"
     onclick={() => (hideMenuList = !hideMenuList)}
   >
     {#if BrowserWalletState.connecting}
@@ -90,7 +90,7 @@
   </button>
   
   <div
-    class={`mr-menu-list z-50 w-40 absolute ml-4  justify-center m-auto  rounded-b-md border text-center shadow-sm backdrop-blur ${hideMenuList && "hidden"} ${isDark ? `bg-primary-950  text-neutral-50` : `bg-neutral-50 text-neutral-950`}`}
+    class={`mr-menu-list z-50 w-40 absolute  justify-center m-auto  rounded-b-md border text-center shadow-sm backdrop-blur ${hideMenuList && "hidden"} ${isDark ? `bg-primary-950  text-neutral-50` : `bg-neutral-50 text-neutral-950`}`}
   >
     {#if BrowserWalletState.wallet === undefined && availableWallets.length > 0}
       {#each availableWallets as enabledWallet}

@@ -11,7 +11,7 @@
   let amountM: number = 1;
 </script>
 
-<form use:focusTrap={isFocused} class="p-4">
+<form use:focusTrap={isFocused} class="w-1/2 m-auto">
   <input
     class="input input-group p-2 m-2"
     type="text"
