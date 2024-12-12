@@ -40,16 +40,10 @@ export async function mint(policy: string, tokenName: string) {
     });
   });
 
-  console.log("nftToLock:", lockAssetUtxo);
-  console.log("token:", tokenName);
-  console.log("tokenHex:", tokenNameHex);
-
   const paramUtxo = outputReference(
     lockAssetUtxo.input.txHash,
     lockAssetUtxo.input.outputIndex,
   );
-  console.log("utxo");
-  console.log(paramUtxo);
 
   if (!paramUtxo) {
     throw new Error("paramUtxo not found!");
@@ -85,23 +79,16 @@ export async function mint(policy: string, tokenName: string) {
     "JSON",
   );
 
-  console.log(parameterizedScript);
-
   const scriptAddr = serializePlutusScript(
     { code: parameterizedScript, version: "V3" },
     undefined,
     0,
   ).address;
-  console.log("script address:", scriptAddr, "\n");
 
   const fractPolicyId = resolveScriptHash(parameterizedScript, "V3");
-  console.log("fractPolicyId:", fractPolicyId);
 
   const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
   const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
-
-  console.log(wallet1Collateral[0]);
-  console.log(wallet1Addy);
 
   // Ref script validator
   const refScriptValidator = refBlueprint.validators.filter((val) =>

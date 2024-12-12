@@ -33,30 +33,10 @@ export async function burn(policy: string, tokenName: string) {
 
   const wallet1Address = await BrowserWalletState.wallet.getChangeAddress();
 
-  console.log("token:", tokenName);
-  console.log("tokenHex:", tokenNameHex);
-
-  console.log("wallet addy:", wallet1Address);
-
-  console.log(utxos);
-  console.log(utxos[0]);
-
-  console.log("token:", tokenName);
-  console.log("tokenHex:", tokenNameHex);
-
-  console.log("wallet addy:", wallet1Address);
-
-  // const r = await maestroProvider.get(
-  //   "assets/" +
-  //     policy + tokenNameHex + "/utxos",
-  // );
-
-  // console.log(await maestroProvider.fetchTxInfo(r.data[0].tx_hash));
   const hash = await maestroProvider.get(
     "assets/" +
       policy + tokenNameHex + "/mints",
   );
-  console.log(hash);
 
   const tx_hash = hash.data[0].tx_hash;
 
@@ -67,48 +47,9 @@ export async function burn(policy: string, tokenName: string) {
 
   const refScriptidx = 1;
 
-  // const mintScript = applyParamsToScript(
-  //   mintData.data.outputs[1].reference_script.hash,
-  //   [],
-  //   "JSON"
-  // );
   const mintScript = applyCborEncoding(
     mintData.data.outputs[refScriptidx].reference_script.bytes,
   );
-
-  console.log(hash);
-
-  // const mintData = await maestroProvider.get(
-  //   "transactions/" + hash.data[0].tx_hash,
-  //   +"/txo",
-  // );
-
-  // const hash2 = await maestroProvider.get(
-  //   "assets/" +
-  //     mintData.data.outputs[0].assets[1].unit + "/mints",
-  // );
-
-  // console.log(hash2);
-
-  // const mintData2 = await maestroProvider.get(
-  //   "transactions/" + hash2.data[0].tx_hash,
-  //   +"/txo",
-  // );
-
-  console.log(mintScript);
-
-  // console.log(
-  //   "//find: " +
-  //     "c84f2755ba3913f381af73761d79432c1d31a1a45ec6b8208ec82b45f9bd7413" +
-  //     "OR: " +
-  //     "5f47ab04b7514c881749671de7185d25baff2aaef8e5f2f7bf28b520",
-  // );
-
-  // const script = applyCborEncoding(
-  //   mintData.data.outputs[0].reference_script.bytes,
-  // );
-
-  // console.log(script);
 
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>
@@ -132,39 +73,6 @@ export async function burn(policy: string, tokenName: string) {
 
   const nftToUnLock = unLockAssetUtxo[0];
 
-  console.log("---------------");
-  console.log(nftToUnLock);
-  // console.log(mintData2.data.tx_hash);
-
-  // const paramUtxo = outputReference(
-  //   mintData2.data.tx_hash, //nftToUnLock.input.txHash,
-  //   0,
-  // );
-
-  const tokenNameHex2 = stringToHex(tokenName.replace("fract-", ""));
-  const policy2 = nftToUnLock.output.amount[1].unit.replace(tokenNameHex2, "");
-  console.log(tokenNameHex2);
-  console.log(policy2);
-  // console.log(paramUtxo);
-
-  // const parameterizedScript = applyParamsToScript(
-  //   fractNftValidator[0].compiledCode,
-  //   [
-  //     builtinByteString(
-  //       policy2,
-  //     ),
-  //     builtinByteString(tokenNameHex2),
-  //     integer(100),
-  //     integer(50),
-  //     paramUtxo,
-  //   ],
-  //   "JSON",
-  // );
-
-  // const newParameterizedScript = parameterizedScript; //parameterizedScript.slice(6);
-
-  // console.log(newParameterizedScript);
-
   const wallet1Collateral = await BrowserWalletState.wallet.getCollateral();
   const wallet1Addy = await BrowserWalletState.wallet.getChangeAddress();
 
@@ -183,13 +91,11 @@ export async function burn(policy: string, tokenName: string) {
       nftToUnLock.output.amount,
       nftToUnLock.output.address,
     )
-    // .txInScript(script)
     .spendingTxInReference(tx_hash, refScriptidx)
     .spendingReferenceTxInInlineDatumPresent()
     .spendingReferenceTxInRedeemerValue("")
     .mintPlutusScriptV3()
     .mint("-50", fractPolicyId, tokenNameHex)
-    // .mintingScript(script)
     .mintTxInReference(tx_hash, refScriptidx)
     .mintRedeemerValue(mConStr1([]))
     .txOut(wallet1Addy, [])
