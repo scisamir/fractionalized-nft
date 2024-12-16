@@ -23,7 +23,7 @@
   <input
     class="input input-group p-2 m-2"
     type="text"
-    name="Token Name"
+    name="Token Name (Text Only)"
     bind:value={tokenName}
     placeholder="Token Name"
   />
