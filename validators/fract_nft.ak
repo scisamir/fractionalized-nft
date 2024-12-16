@@ -75,7 +75,7 @@ validator fract_nft(
     expect [Pair(_, quantity)] =
       mint |> assets.tokens(policy_id) |> dict.to_pairs
 
-    quantity == -burn_tokens_quantity
+    (quantity <= -burn_tokens_quantity)?
   }
 
   else(_) {
@@ -134,7 +134,7 @@ fn validate_burn(
 ) {
   let is_burn_tokens_valid =
     assets
-      |> list.any(fn(Pair(_, quantity)) { quantity == -burn_tokens_quantity })
+      |> list.any(fn(Pair(_, quantity)) { quantity <= -burn_tokens_quantity })
 
   let is_input_valid =
     inputs
