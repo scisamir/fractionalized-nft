@@ -45,6 +45,9 @@ export async function mint(
     });
   });
 
+  if (lockAssetUtxo == undefined || lockAssetUtxo == null) {
+    throw new Error("NFT not found!");
+  }
   const paramUtxo = outputReference(
     lockAssetUtxo.input.txHash,
     lockAssetUtxo.input.outputIndex,
@@ -113,6 +116,11 @@ export async function mint(
     0,
   ).address;
 
+  const datum = mConStr0([
+    amountM,
+    amountN,
+  ]);
+
   const unsignedTx = await txBuilder
     .txIn(
       lockAssetUtxo.input.txHash,
@@ -121,11 +129,12 @@ export async function mint(
       lockAssetUtxo.output.address,
     )
     .mintPlutusScriptV3()
-    .mint("100", fractPolicyId, stringToHex("fract-" + tokenName))
+    .mint(amountM, fractPolicyId, stringToHex("fract-" + tokenName))
     .mintingScript(parameterizedScript)
     .mintRedeemerValue(mConStr0([]))
     .txOut(scriptAddr, [{ unit: policy + tokenNameHex, quantity: "1" }])
     .txOut(refScriptValAddr, [{ unit: "lovelace", quantity: "7000000" }])
+    .txOutInlineDatumValue(datum)
     .changeAddress(wallet1Addy)
     .selectUtxosFrom(utxos)
     .txOutReferenceScript(parameterizedScript, "V3")
@@ -177,4 +186,5 @@ export async function TESTmint(name: string) {
   const txHash = await BrowserWalletState.wallet.submitTx(signedTx);
 
   console.log("my_nft minted tx hash:", txHash);
+  return txHash == undefined;
 }

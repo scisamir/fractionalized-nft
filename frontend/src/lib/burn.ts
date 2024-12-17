@@ -38,18 +38,27 @@ export async function burn(policy: string, tokenName: string) {
       policy + tokenNameHex + "/mints",
   );
 
+  console.log(hash);
+
+  if (!hash || hash == undefined || hash == null) {
+    throw new Error("Error: NFT not found!");
+  }
+
   const tx_hash = hash.data[0].tx_hash;
 
   const mintData = await maestroProvider.get(
     "transactions/" + tx_hash,
     // +"/txo",
   );
+  console.log(mintData);
 
   const refScriptidx = 1;
 
   const mintScript = applyCborEncoding(
     mintData.data.outputs[refScriptidx].reference_script.bytes,
   );
+
+  console.log(mintData.data.outputs[refScriptidx].datum.json.fields[1].int);
 
   // Fract NFT Validator
   const fractNftValidator = blueprint.validators.filter((val) =>
@@ -80,8 +89,11 @@ export async function burn(policy: string, tokenName: string) {
   console.log("fractPolicyId:", fractPolicyId);
 
   console.log("nft:");
-  console.log(nftToUnLock);
+  console.log(unLockAssetUtxo);
   console.log("Col:", wallet1Collateral[0]);
+
+  const amt = mintData.data.outputs[refScriptidx].datum.json.fields[1].int * -1;
+  console.log(amt.toString());
 
   const unsignedTx = await txBuilder
     .spendingPlutusScriptV3()
@@ -95,7 +107,11 @@ export async function burn(policy: string, tokenName: string) {
     .spendingReferenceTxInInlineDatumPresent()
     .spendingReferenceTxInRedeemerValue("")
     .mintPlutusScriptV3()
-    .mint("-50", fractPolicyId, tokenNameHex)
+    .mint(
+      `${amt.toString()}`,
+      fractPolicyId,
+      tokenNameHex,
+    )
     .mintTxInReference(tx_hash, refScriptidx)
     .mintRedeemerValue(mConStr1([]))
     .txOut(wallet1Addy, [])
