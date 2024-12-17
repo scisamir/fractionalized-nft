@@ -7,8 +7,8 @@
   let isFocused: boolean = true;
   let policy: string = "";
   let tokenName: string = "";
-  let amountN: number = 1;
-  let amountM: number = 1;
+  let amountN: number;
+  let amountM: number;
   $: ismint = true;
   let isSuccess: Boolean = true;
   let error: string = "General Error!";
@@ -49,14 +49,14 @@
       type="number"
       name="M_Amount"
       bind:value={amountM}
-      placeholder="M Amount"
+      placeholder="Total Count"
     />
     <input
       class="input input-group p-2 m-2"
       type="number"
       name="N_Amount"
       bind:value={amountN}
-      placeholder="N Amount"
+      placeholder="Amount To Unlock"
     />
   {/if}
   <div class="text-center">
