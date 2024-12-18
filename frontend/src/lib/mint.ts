@@ -29,6 +29,9 @@ export async function mint(
   amountM: number,
   amountN: number,
 ) {
+
+  txBuilder.reset();
+
   const tokenNameHex = stringToHex(tokenName);
   if (BrowserWalletState.wallet == undefined) {
     return;
